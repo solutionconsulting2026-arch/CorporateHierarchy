@@ -1,0 +1,959 @@
+<!doctype html>
+<html>
+  <head>
+    
+    <title>Hunnu Air - Corporate Hierarchy (Interactive) - Blue Theme</title>
+
+    <!-- Poppins font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        /* Blue theme colors */
+        --blue-900: #0b63d6; /* parent - deep blue */
+        --blue-700: #2b8cff; /* subsidiary */
+        --blue-200: #e6f2ff; /* child background */
+        --bg: #ffffff;
+        --text: #0f1724;
+        --shadow: 0 8px 24px rgba(11, 99, 214, 0.08);
+        --radius: 12px;
+        --font-sans: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+        font-family: var(--font-sans);
+        color: var(--text);
+      }
+
+      .wrap {
+        padding: 18px;
+        box-sizing: border-box;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      header {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      #canvas {
+        flex: 1;
+        border-radius: 10px;
+        background: linear-gradient(180deg, #fff 0%, #f7fbff 100%);
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* SVG will fill container */
+      svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      /* Node styles (rendered as rect+text) */
+      .node-box {
+        pointer-events: auto;
+      }
+
+      .node-rect {
+        fill: var(--blue-200);
+        stroke: var(--blue-700);
+        stroke-width: 2;
+        rx: 12;
+        ry: 12;
+        filter: drop-shadow(var(--shadow));
+      }
+
+      .node-title {
+        font-weight: 600;
+        font-size: 14px;
+        text-anchor: start;
+        fill: var(--text);
+      }
+
+      .node-sub {
+        font-size: 12px;
+        opacity: 0.85;
+        text-anchor: start;
+        fill: var(--text);
+      }
+
+      /* center text in parent/subsidiary nodes */
+      .centered text {
+        text-anchor: middle;
+      }
+
+      /* Parent & subsidiary variants */
+      .parent .node-rect {
+        fill: var(--blue-900);
+        stroke: var(--blue-900);
+      }
+
+      .parent .node-title,
+      .parent .node-sub {
+        /* white text for high contrast */
+        fill: #fff;
+      }
+
+      .subsidiary .node-rect {
+        fill: var(--blue-700);
+        stroke: var(--blue-700);
+      }
+
+      .subsidiary .node-title {
+        fill: #fff;
+      }
+
+      .child .node-rect {
+        fill: var(--bg);
+        stroke: var(--blue-700);
+      }
+
+      .child .node-title {
+        fill: var(--blue-700);
+      }
+
+      /* font-size hierarchy: parent largest, subsidiary medium, child smallest */
+      .parent .node-title { font-size: 20px; }
+      .parent .node-sub { font-size: 14px; opacity: 0.95; }
+
+      .subsidiary .node-title { font-size: 16px; }
+      .subsidiary .node-sub { font-size: 13px; opacity: 0.9; }
+
+      .child .node-title { font-size: 13px; }
+      .child .node-sub { font-size: 12px; opacity: 0.85; }
+
+      /* connector */
+      .connector {
+        fill: none;
+        stroke: #4b90ff;
+        stroke-width: 2;
+      }
+
+      .connector.parent {
+        stroke: #0b63d6;
+      }
+
+      /* tooltip */
+      .tooltip {
+        position: absolute;
+        display: none;
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: var(--shadow);
+        max-width: 360px;
+        border: 1px solid rgba(11, 99, 214, 0.08);
+        font-size: 14px;
+      }
+
+      .tooltip h4 {
+        margin: 0 0 6px 0;
+        font-size: 15px;
+      }
+
+      .tooltip p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.3;
+      }
+
+      /* right panel (expand on click) */
+      .sidepanel {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        width: 380px;
+        max-width: 40%;
+        height: 76%;
+        background: white;
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        padding: 16px;
+        display: none;
+        overflow: auto;
+        border: 1px solid rgba(11, 99, 214, 0.06);
+      }
+
+      .sidepanel h3 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+      }
+
+      .sidepanel .close {
+        position: absolute;
+        right: 8px;
+        top: 6px;
+        cursor: pointer;
+      }
+
+      .link-btn{
+        display:inline-block;padding:6px 10px;border-radius:6px;border:1px solid rgba(11,99,214,0.1);background:#fff;font-size:13px;margin-left:8px;cursor:pointer
+      }
+
+      .linked-item {
+        opacity: .95;
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+
+      .linked-item .desc {
+        opacity: .75;
+        font-size: 12px;
+        margin-top: 3px;
+      }
+
+      .stakeholders {
+        margin-top:8px;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+
+      .stakeholders a {
+        color: var(--blue-700);
+        text-decoration: none;
+      }
+
+      .stakeholders a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 700px) {
+        .sidepanel {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      
+
+      <div
+        id="canvas"
+        role="application"
+        aria-label="Corporate hierarchy diagram"
+      >
+        <!-- Tooltip and sidepanel (HTML overlays) -->
+        <div id="tooltip" class="tooltip" role="dialog" aria-hidden="true"></div>
+
+        <div id="sidepanel" class="sidepanel" aria-hidden="true">
+          <button
+            class="close"
+            aria-label="Close panel"
+            onclick="closePanel()"
+          >
+            ✕
+          </button>
+          <div id="panel-content"></div>
+        </div>
+
+        <!-- SVG container -->
+        <svg
+          id="svgRoot"
+          viewBox="0 0 1200 700"
+          preserveAspectRatio="xMidYMid meet"
+          tabindex="0"
+        >
+          <defs>
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="5"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#4b90ff" />
+            </marker>
+          </defs>
+
+          <!-- connectors and nodes will be rendered by JS -->
+          <g id="connectors"></g>
+          <g id="nodes"></g>
+        </svg>
+      </div>
+    </div>
+
+    <script>
+      /*************************************************************************
+       * Sample data (JSON) - now with structured keyStakeholders (name + role + link)
+       *************************************************************************/
+      const DATA = {
+        parent: {
+          id: "hunnu-global",
+          name: "Hunnu Air Global",
+          type: "Parent",
+          link: "https://presales.businessbywire.com/appmeadg/businessnext/detail/Account?x=efa8kjuwhuermtn73e2l4s6dkwky5pj7ntwukd9t7c2b5j66jrzq&mdi=-1",
+          shareholders:
+            "Founders (60%), Private Investors (25%), Employees (15%)",
+          financials: "FY24 Revenue: ₮420M, Employees: 4,200",
+        },
+
+        subsidiaries: [
+          {
+            id: "hunnu-air",
+            name: "Hunnu Air",
+            type: "Subsidiary",
+            link: "https://presales.businessbywire.com/appmeadg/businessnext/detail/Account?x=efa8kjuwhuerm5e7d838b6grkfch5858t8d3mxbfms6cpdgsd36q",
+            shareholders: "Hunnu Air Global (85%), Local Investors (15%)",
+            financials: "FY24 Revenue: ₮120M",
+            // Structured stakeholders: names + optional role + link
+            keyStakeholders: [
+              {
+                name: "Munkhjargal Purevjal",
+                role: "CEO",
+                link: "https://presales.businessbywire.com/appmeadg/businessnext/detail/Contact?x=l8vsqv4h9bjbcczqmcgb2rsnp3klg69vfbcnvfcfca7rdncvw9ta&mdi=-1"
+              },
+              {
+                name: "Turbold Tserenkhuu",
+                role: "Director",
+                link: "https://presales.businessbywire.com/appmeadg/businessnext/detail/Contact?x=7sr32kvkpkzarsmj5ck9urzqu3d65zfphxvyk6k7gaqg5u8whpeq&mdi=-1"
+              }
+            ],
+            dealers: [
+              {
+                id: "d1",
+                name: "Ulaanbaatar Logistics",
+                region: "Mongolia",
+                desc: "Regional ticketing partner",
+                link: "https://example.com/ulaanbaatar"
+              },
+            ],
+
+            suppliers: [
+              {
+                id: "s1",
+                name: "AeroParts Co.",
+                region: "China",
+                desc: "Aircraft parts supplier",
+                link: "https://example.com/aeroparts"
+              },
+            ],
+            accounts: [
+              {
+                id: "a1",
+                name: "Corporate Banking - UB",
+                region: "Mongolia",
+                desc: "Primary treasury account",
+                link: "https://example.com/corporate-banking-ub"
+              },
+            ],
+            holdings: [
+              {
+                id: "h1",
+                name: "Hunnu Fleet Investments",
+                region: "Cayman",
+                desc: "Aircraft leasing SPV",
+                link: "https://example.com/hunnu-fleet"
+              },
+            ],
+          },
+
+          {
+            id: "pacific-cargo",
+            name: "Pacific Cargo Ltd.",
+            type: "Subsidiary",
+            link: "https://presales.businessbywire.com/appgts/businessnext/detail/Account?x=pacific_cargo_link",
+            shareholders: "Hunnu Air Global (70%), Partners (30%)",
+            financials: "FY24 Revenue: ₮98M",
+
+            suppliers: [
+              {
+                id: "s3",
+                name: "CargoTech Supplies",
+                region: "Korea",
+                desc: "Logistics equipment supplier",
+                link: "https://example.com/cargotech"
+              },
+            ],
+            accounts: [
+              {
+                id: "a2",
+                name: "Global Collections",
+                region: "Singapore",
+                desc: "Receivables & treasury",
+                link: "https://example.com/global-collections"
+              },
+            ],
+            holdings: [
+              {
+                id: "h2",
+                name: "Pacific Holdings",
+                region: "BVI",
+                desc: "Investment holding",
+                link: "https://example.com/pacific-holdings"
+              },
+            ],
+          },
+
+          {
+            id: "skylogix",
+            name: "SkyLogix Holdings",
+            type: "Subsidiary",
+            link: "https://presales.businessbywire.com/appgts/businessnext/detail/Account?x=skylogix_link",
+            shareholders: "Hunnu Air Global (60%), VC Funds (40%)",
+            financials: "FY24 Revenue: 205M",
+
+            suppliers: [
+              
+            ],
+            accounts: [
+              
+            ],
+            holdings: [
+              {
+                id: "h3",
+                name: "SkyLogix Capital",
+                region: "UK",
+                desc: "Strategic investments",
+                link: "https://example.com/skylogix-capital"
+              },
+            ],
+          },
+        ],
+      };
+
+      /*************************************************************************
+       * Layout configuration
+       *************************************************************************/
+      const cfg = {
+        svgW: 1200,
+        svgH: 700,
+        marginTop: 60,
+        parentY: 80,
+        subsidiaryY: 220,
+        childStartY: 330,
+        subsidiarySpacing: 340,
+        subsidiaryBox: { w: 260, h: 84 },
+        parentBox: { w: 340, h: 96 },
+        childBox: { w: 200, h: 64 },
+        childGapX: 20,
+        childGapY: 100,
+      };
+
+      const svg = document.getElementById("svgRoot");
+      const nodesGroup = document.getElementById("nodes");
+      const connGroup = document.getElementById("connectors");
+      const tooltip = document.getElementById("tooltip");
+      const sidepanel = document.getElementById("sidepanel");
+      const panelContent = document.getElementById("panel-content");
+
+      // Responsive resize: keep viewBox but also reposition if needed in future
+      function render() {
+        nodesGroup.innerHTML = "";
+        connGroup.innerHTML = "";
+
+        // Parent position: top center
+        const centerX = cfg.svgW / 2;
+        const pX = centerX - cfg.parentBox.w / 2;
+        const pY = cfg.parentY;
+        const parentNode = {
+          x: pX,
+          y: pY,
+          w: cfg.parentBox.w,
+          h: cfg.parentBox.h,
+          data: DATA.parent,
+        };
+
+        // Subsidiaries horizontally centered below
+        const nSubs = DATA.subsidiaries.length;
+        const totalWidth = (nSubs - 1) * cfg.subsidiarySpacing;
+        const startX =
+          centerX - totalWidth / 2 - cfg.subsidiaryBox.w / 2;
+
+        const subsNodes = [];
+        DATA.subsidiaries.forEach((s, i) => {
+          const x = startX + i * cfg.subsidiarySpacing;
+          const y = cfg.subsidiaryY;
+          const node = {
+            x,
+            y,
+            w: cfg.subsidiaryBox.w,
+            h: cfg.subsidiaryBox.h,
+            data: s,
+          };
+          subsNodes.push(node);
+        });
+
+        // Draw connectors parent->subs with orthogonal elbows
+        subsNodes.forEach((sub) => {
+          const from = {
+            x: parentNode.x + parentNode.w / 2,
+            y: parentNode.y + parentNode.h,
+          };
+          const to = { x: sub.x + sub.w / 2, y: sub.y };
+          drawOrthogonalConnector(from, to, "connector parent");
+        });
+
+        // Draw parent node
+        drawNode(parentNode, "parent");
+
+        // Draw subsidiary nodes
+        subsNodes.forEach((sub, si) => {
+          drawNode(sub, "subsidiary");
+
+          // compute child nodes per group (dealers left, suppliers right, accounts closer, holdings below)
+          const childGroups = [];
+          const sdata = sub.data;
+          const leftX = sub.x - 240; // start left side
+          const rightX = sub.x + sub.w + 40; // start right side
+
+          // Dealers - left diagonally upward-ish; lower some specific dealers to avoid overlap
+          const dealers = sdata.dealers || [];
+          dealers.forEach((d, idx) => {
+            let x = sub.x - 200 - idx * (cfg.childBox.w + cfg.childGapX);
+            let y =
+              cfg.childStartY + idx * (cfg.childGapY / 2) + si * 10;
+            // adjustments requested: move Sealink (pacific-cargo) and SkySales lower
+            if (
+              d.name &&
+              d.name.toLowerCase().includes("sealink")
+            )
+              y += 70; // move Sealink Dealers down
+            if (
+              d.name &&
+              d.name.toLowerCase().includes("skysales")
+            )
+              y += 70; // move SkySales Mongolia down
+
+            childGroups.push({
+              x,
+              y,
+              w: cfg.childBox.w,
+              h: cfg.childBox.h,
+              data: d,
+              kind: "Dealer",
+            });
+          });
+
+          // Suppliers - right
+          const suppliers = sdata.suppliers || [];
+          suppliers.forEach((d, idx) => {
+            const x =
+              sub.x + sub.w + 60 + idx * (cfg.childBox.w + cfg.childGapX);
+            const y = cfg.childStartY + idx * (cfg.childGapY / 2) + si * 10;
+            childGroups.push({
+              x,
+              y,
+              w: cfg.childBox.w,
+              h: cfg.childBox.h,
+              data: d,
+              kind: "Supplier",
+            });
+          });
+
+          // Accounts - near-right (moved down to avoid overlap)
+          const accounts = sdata.accounts || [];
+          accounts.forEach((d, idx) => {
+            const x =
+              sub.x + sub.w + 90 + idx * (cfg.childBox.w + cfg.childGapX);
+            // base y moved down overall so accounts sit lower and avoid overlaps
+            let y = cfg.childStartY + 180 + idx * (cfg.childBox.h + 20) + si * 6;
+
+            // increase the downward nudge for specific named accounts so they don't overlap
+            if (
+              d.name &&
+              d.name.toLowerCase().includes("corporate banking")
+            )
+              y += 80; // moved further down
+
+            if (
+              d.name &&
+              d.name.toLowerCase().includes("global collections")
+            )
+              y += 80; // moved further down
+
+            childGroups.push({
+              x,
+              y,
+              w: cfg.childBox.w,
+              h: cfg.childBox.h,
+              data: d,
+              kind: "Account",
+            });
+          });
+
+          // Holdings - below center of subsidiary (nudged slightly less than before)
+          const holdings = sdata.holdings || [];
+          holdings.forEach((d, idx) => {
+            const x =
+              sub.x + (sub.w - cfg.childBox.w) / 2 + idx * (cfg.childBox.w + 8);
+            let y = sub.y + sub.h + 140 + si * 6;
+
+            // if the holding is Pacific Holdings or SkyLogix Capital, nudge it slightly (less than before)
+            if (d.name) {
+              const nm = d.name.toLowerCase();
+              if (nm.includes("pacific holdings") || nm.includes("skylogix capital") || nm.includes("skylogix")) {
+                y += 40; // reduced offset from 80 -> 40
+              }
+            }
+
+            childGroups.push({
+              x,
+              y,
+              w: cfg.childBox.w,
+              h: cfg.childBox.h,
+              data: d,
+              kind: "Holding",
+            });
+          });
+
+          // draw child connectors and nodes
+          childGroups.forEach((c) => {
+            const from = { x: sub.x + sub.w / 2, y: sub.y + sub.h };
+            const to = { x: c.x + c.w / 2, y: c.y };
+            drawOrthogonalConnector(from, to, "connector");
+            drawNode(c, "child", c.kind);
+          });
+        });
+      }
+
+      // Draw a rectangular node (SVG group)
+      function drawNode(nodeObj, variant, kind) {
+        const g = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "g"
+        );
+        g.classList.add("node-box");
+        if (variant) g.classList.add(variant);
+
+        // center-align text within node groups
+        if (variant === "parent" || variant === "subsidiary")
+          g.classList.add("centered");
+
+        const x = nodeObj.x,
+          y = nodeObj.y,
+          w = nodeObj.w,
+          h = nodeObj.h;
+
+        const rect = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "rect"
+        );
+        rect.setAttribute("x", x);
+        rect.setAttribute("y", y);
+        rect.setAttribute("width", w);
+        rect.setAttribute("height", h);
+        rect.setAttribute("rx", 12);
+        rect.setAttribute("ry", 12);
+        rect.classList.add("node-rect");
+        g.appendChild(rect);
+
+        // Title text (centered for parent/subsidiary)
+        const title = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        if (g.classList.contains("centered")) {
+          title.setAttribute("x", x + w / 2);
+        } else {
+          title.setAttribute("x", x + 14);
+        }
+        // vertical position tweaked for larger parent font
+        title.setAttribute("y", y + 34);
+        title.setAttribute("class", "node-title");
+        title.textContent = nodeObj.data.name;
+        g.appendChild(title);
+
+        // subtitle
+        const subtitle = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        if (g.classList.contains("centered"))
+          subtitle.setAttribute("x", x + w / 2);
+        else subtitle.setAttribute("x", x + 14);
+        subtitle.setAttribute("y", y + 58);
+        subtitle.setAttribute("class", "node-sub");
+        if (variant === "parent") subtitle.textContent = nodeObj.data.type || "Parent";
+        else if (variant === "subsidiary")
+          subtitle.textContent = nodeObj.data.type || "Subsidiary";
+        else subtitle.textContent = kind || "";
+        g.appendChild(subtitle);
+
+        // focusable rectangle overlay for keyboard nav (transparent)
+        const overlay = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "rect"
+        );
+        overlay.setAttribute("x", x);
+        overlay.setAttribute("y", y);
+        overlay.setAttribute("width", w);
+        overlay.setAttribute("height", h);
+        overlay.setAttribute("fill", "transparent");
+        overlay.setAttribute("tabindex", "0");
+
+        // include kind in aria-label for children
+        const labelParts = [nodeObj.data.name, variant];
+        if (kind) labelParts.push(kind);
+        overlay.setAttribute("aria-label", labelParts.join(" "));
+        overlay.style.cursor = "pointer";
+
+        overlay.addEventListener("mouseenter", (ev) => showTooltip(nodeObj, ev));
+        overlay.addEventListener("mouseleave", hideTooltip);
+        overlay.addEventListener("focus", (ev) => showTooltip(nodeObj, ev));
+        overlay.addEventListener("blur", hideTooltip);
+        overlay.addEventListener("click", () => openPanel(nodeObj, variant, kind));
+        overlay.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            openPanel(nodeObj, variant, kind);
+            e.preventDefault();
+          }
+        });
+
+        g.appendChild(overlay);
+
+        nodesGroup.appendChild(g);
+      }
+
+      // Draw orthogonal connector from 'from' to 'to'
+      function drawOrthogonalConnector(from, to, cls) {
+        // create elbow: vertical down from 'from' to midwayY, horizontal to to.x, then vertical to 'to'
+        const midY = (from.y + to.y) / 2;
+        // But to respect right-angle connectors and keep neat lines, use three segments: from -> (from.x, midY) -> (to.x, midY) -> to
+        const points = [
+          `${from.x},${from.y}`,
+          `${from.x},${midY}`,
+          `${to.x},${midY}`,
+          `${to.x},${to.y}`,
+        ].join(" ");
+
+        const poly = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "polyline"
+        );
+        poly.setAttribute("points", points);
+        poly.setAttribute("class", cls);
+        poly.setAttribute("fill", "none");
+        poly.setAttribute("stroke-linecap", "round");
+        poly.setAttribute("stroke-linejoin", "round");
+        poly.setAttribute("marker-end", "url(#arrow)");
+        connGroup.appendChild(poly);
+      }
+
+      // Tooltip behavior: populate and position
+      function showTooltip(nodeObj, ev) {
+        const d = nodeObj.data;
+        const isParent =
+          nodeObj.data.type &&
+          nodeObj.data.type.toLowerCase().includes("parent");
+        const isSubs =
+          nodeObj.data.type &&
+          nodeObj.data.type.toLowerCase().includes("subsidiary");
+
+        let html = "";
+        if (isParent || isSubs) {
+          html += `<h4>${escapeHtml(d.name)}</h4>`;
+          html += `<p><strong>Shareholders:</strong> ${escapeHtml(
+            d.shareholders || "—"
+          )}</p>`;
+          html += `<p><strong>Key data:</strong> ${escapeHtml(
+            d.financials || "—"
+          )}</p>`;
+        } else {
+          // child
+          html += `<h4>${escapeHtml(d.name)}</h4>`;
+          html += `<p><strong>Type:</strong> ${escapeHtml(
+            ev.target.getAttribute("aria-label") || ""
+          )}</p>`;
+          html += `<p><strong>Region:</strong> ${escapeHtml(
+            d.region || "—"
+          )}</p>`;
+          html += `<p>${escapeHtml(d.desc || "")}</p>`;
+        }
+
+        tooltip.innerHTML = html;
+        tooltip.style.display = "block";
+        tooltip.setAttribute("aria-hidden", "false");
+
+        // position near mouse or element
+        const rect = document.getElementById("canvas").getBoundingClientRect();
+        let pageX, pageY;
+        if (ev.clientX && ev.clientY) {
+          pageX = ev.clientX;
+          pageY = ev.clientY;
+        } else {
+          // keyboard focus: use node center
+          pageX = rect.left + nodeObj.x + nodeObj.w / 2;
+          pageY = rect.top + nodeObj.y + nodeObj.h / 2;
+        }
+
+        // small offsets
+        const offsetX = 14;
+        const offsetY = 10;
+        // ensure tooltip doesn't go off-screen
+        tooltip.style.left =
+          Math.min(pageX - rect.left + offsetX, rect.width - 320) + "px";
+        tooltip.style.top =
+          Math.min(pageY - rect.top + offsetY, rect.height - 80) + "px";
+      }
+
+      function hideTooltip() {
+        tooltip.style.display = "none";
+        tooltip.setAttribute("aria-hidden", "true");
+      }
+
+      // Side panel (on click) - expands right side with more info
+      // Now accepts variant and kind so we can render child kinds properly
+      function openPanel(nodeObj, variant, kind) {
+        sidepanel.style.display = "block";
+        sidepanel.setAttribute("aria-hidden", "false");
+        panelContent.innerHTML = buildPanelHtml(nodeObj.data, variant, kind);
+      }
+
+      function closePanel() {
+        sidepanel.style.display = "none";
+        sidepanel.setAttribute("aria-hidden", "true");
+      }
+
+      // build panel HTML: renders structured stakeholders as clickable links
+      // Accepts variant (parent/subsidiary/child) and kind (Dealer/Supplier/Account/Holding)
+      function buildPanelHtml(data, variant, kind) {
+        let html = `<h3>${escapeHtml(data.name)}</h3>`;
+
+        // Parent node
+        if (variant === "parent" || (data.type && data.type.toLowerCase().includes("parent"))) {
+          html += `<p><strong>Type:</strong> Parent Company</p>`;
+          html += `<p><strong>Shareholders:</strong> ${escapeHtml(data.shareholders || "—")}</p>`;
+          html += `<p><strong>Financials:</strong> ${escapeHtml(data.financials || "—")}</p>`;
+          if (data.link) {
+            html += `<hr/><p style="opacity:.8;font-size:13px">Actions: <button class="link-btn" onclick="window.open('${escapeJs(data.link)}','_blank')">View profile</button></p>`;
+          }
+          return html;
+        }
+
+        // Subsidiary node
+        if (variant === "subsidiary" || (data.type && data.type.toLowerCase().includes("subsidiary"))) {
+          html += `<p><strong>Type:</strong> Subsidiary</p>`;
+          html += `<p><strong>Shareholders:</strong> ${escapeHtml(data.shareholders || "—")}</p>`;
+          html += `<p><strong>Financials:</strong> ${escapeHtml(data.financials || "—")}</p>`;
+
+          // Render keyStakeholders: supports structured array or fallback string
+          if (Array.isArray(data.keyStakeholders) && data.keyStakeholders.length) {
+            html += `<p class="stakeholders"><strong>Key stakeholders:</strong> `;
+            const parts = data.keyStakeholders.map((s) => {
+              const nameEsc = escapeHtml(s.name || "");
+              if (s.link) {
+                return `<a href="${escapeJs(s.link)}" target="_blank" rel="noopener noreferrer">${nameEsc}${s.role ? ` — ${escapeHtml(s.role)}` : ""}</a>`;
+              } else {
+                return `${nameEsc}${s.role ? ` — ${escapeHtml(s.role)}` : ""}`;
+              }
+            });
+            html += parts.join(", ") + `</p>`;
+          } else if (data.keyStakeholders) {
+            html += `<p><strong>Key stakeholders:</strong> ${escapeHtml(data.keyStakeholders)}</p>`;
+          }
+
+          html += `<hr/>`;
+          html += `<h4>Linked entities</h4>`;
+
+          ["dealers", "suppliers", "accounts", "holdings"].forEach((k) => {
+            if (data[k] && data[k].length) {
+              html += `<h5 style="margin-bottom:6px">${capitalize(k)}</h5><div>`;
+              data[k].forEach((item) => {
+                html += `<div class="linked-item"><strong>${escapeHtml(item.name)}</strong> — ${escapeHtml(item.region || "—")}<div class="desc">${escapeHtml(item.desc || "-")}</div></div>`;
+              });
+              html += `</div>`;
+            }
+          });
+
+          if (data.link) {
+            html += `<hr/><p style="opacity:.8;font-size:13px">Actions: <button class="link-btn" onclick="window.open('${escapeJs(data.link)}','_blank')">View profile</button></p>`;
+          }
+
+          return html;
+        }
+
+        // Child nodes (Dealer / Supplier / Account / Holding / other)
+        // We receive 'kind' (preferred) but can also infer from data keys
+        const childKind = kind || (data.kind ? data.kind : "Entity");
+
+        html += `<p><strong>Type:</strong> ${escapeHtml(childKind)}</p>`;
+        if (data.region) html += `<p><strong>Region:</strong> ${escapeHtml(data.region)}</p>`;
+        if (data.desc) html += `<p><strong>Description:</strong> ${escapeHtml(data.desc)}</p>`;
+
+        // If child has extra fields like link, show action button
+        if (data.link) {
+          html += `<hr/><p style="opacity:.8;font-size:13px">Actions: <button class="link-btn" onclick="window.open('${escapeJs(data.link)}','_blank')">Open link</button></p>`;
+        }
+
+        // For accounts, holdings etc we might have additional metadata - show any other fields
+        // show all other plain keys (excluding name, region, desc, link) to be helpful
+        const skip = new Set(["name", "region", "desc", "link", "id"]);
+        const extras = Object.keys(data).filter(k => !skip.has(k));
+        if (extras.length) {
+          html += `<hr/><div style="font-size:13px"><strong>Additional info</strong><ul style="padding-left:16px;margin:6px 0 0 0">`;
+          extras.forEach((k) => {
+            html += `<li><strong>${escapeHtml(k)}:</strong> ${escapeHtml(String(data[k]))}</li>`;
+          });
+          html += `</ul></div>`;
+        }
+
+        return html;
+      }
+
+      // small helpers
+      function escapeHtml(s) {
+        if (s === undefined || s === null) return "";
+        return String(s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
+
+      // simple JS-escaping for insertion into attributes
+      function escapeJs(s) {
+        if (!s) return "";
+        return String(s).replaceAll('"', '&quot;').replaceAll("'", "\\'");
+      }
+
+      function capitalize(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      }
+
+      // initial render
+      render();
+
+      // Optional: expose a global function to refresh if data changes
+      window.refreshHierarchy = function (newData) {
+        if (newData) {
+          Object.assign(DATA, newData);
+        }
+        render();
+      };
+
+      // Keyboard: allow Esc to close panel or tooltip
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          hideTooltip();
+          closePanel();
+        }
+      });
+    </script>
+  </body>
+</html>
