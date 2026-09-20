@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Muscat Trading LLC – Relationship Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ---------- Tokens ---------- */
+:root {
+  --bg:          #F6FAFD;
+  --card:        #FFFFFF;
+  --card-line:   #CFE3F1;
+  --ink:         #172033;
+  --muted:       #6B7A90;
+  --brand:       #4F91C6;
+  --brand-soft:  #E8F4FC;
+  --hub:         #5E9FD1;
+  --hub-deep:    #3F7FB3;
+  --link:        #A9CFE7;
+  --shadow:      rgba(79, 145, 198, 0.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1722; --card: #172231; --card-line: #2A3B52; --ink: #E6EDF5;
+    --muted: #93A3B8; --brand: #6FB0E3; --brand-soft: #1B3147;
+    --hub: #3F7FB3; --hub-deep: #2F6A99; --link: #3A5D7E; --shadow: rgba(0,0,0,0.35);
+  }
+}
+
+/* ---------- Page ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
+}
+.canvas { width: 100%; overflow-x: auto; }
+svg { width: 100%; min-width: 760px; height: auto; display: block; }
+
+/* ---------- Cards ---------- */
+.card { fill: var(--card); stroke: var(--card-line); stroke-width: 1.5; filter: drop-shadow(0 6px 14px var(--shadow)); }
+.hub  { fill: var(--hub); stroke: var(--hub-deep); stroke-width: 2; filter: drop-shadow(0 10px 22px var(--shadow)); }
+
+.avatar    { fill: var(--brand-soft); stroke: var(--card-line); }
+.initials  { fill: var(--brand); font-size: 12px; font-weight: 600; text-anchor: middle; }
+.glyph     { fill: none; stroke: var(--brand); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.glyph-hub { fill: none; stroke: #FFFFFF;      stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+.name      { fill: var(--ink); font-size: 14px; font-weight: 600; }
+.role      { fill: var(--muted); font-size: 11px; }
+.hub-title { fill: #FFFFFF; font-size: 20px; font-weight: 700; text-anchor: middle; }
+.hub-sub   { fill: rgba(255,255,255,0.85); font-size: 11.5px; text-anchor: middle; }
+
+/* ---------- Connectors ---------- */
+.edge { fill: none; stroke: var(--link); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+
+
+</style>
+</head>
+
+<body>
+<div class="canvas">
+<svg viewBox="48 48 1104 586" role="img" aria-labelledby="t d" preserveAspectRatio="xMidYMid meet">
+  <title id="t">Muscat Trading LLC relationship map</title>
+  <desc id="d">Corporate customer with its shareholder, signatories, director, related companies and banking relationship.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="var(--link)"/>
+    </marker>
+
+    <!-- Icons (24×24) -->
+    <symbol id="i-building" viewBox="0 0 24 24">
+      <path d="M4 21V5l8-3v19M12 21V9l8 3v9M2 21h20M7 8h2M7 12h2M7 16h2M15 14h2M15 17h2"/>
+    </symbol>
+    <symbol id="i-bank" viewBox="0 0 24 24">
+      <path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18M3 18h18"/>
+    </symbol>
+  </defs>
+
+
+  <!-- ================= Connectors (orthogonal) ================= -->
+  <!-- Inbound (left) -->
+  <path class="edge" d="M340,132 H405 V310 H470" marker-end="url(#arrow)"/>
+  <path class="edge" d="M340,340 H470"           marker-end="url(#arrow)"/>
+  <path class="edge" d="M340,530 H405 V370 H470" marker-end="url(#arrow)"/>
+
+  <!-- Outbound (right) – staggered verticals so lines never overlap -->
+  <path class="edge" d="M730,310 H790 V100 H860" marker-end="url(#arrow)"/>
+  <path class="edge" d="M730,330 H815 V260 H860" marker-end="url(#arrow)"/>
+  <path class="edge" d="M730,350 H815 V420 H860" marker-end="url(#arrow)"/>
+  <path class="edge" d="M730,370 H790 V580 H860" marker-end="url(#arrow)"/>
+
+
+
+  <!-- ================= Central entity ================= -->
+  <g>
+    <rect class="hub" x="470" y="275" width="260" height="130" rx="18"/>
+    <circle cx="600" cy="313" r="19" fill="rgba(255,255,255,0.18)"/>
+    <use href="#i-building" class="glyph-hub" x="589" y="302" width="22" height="22"/>
+    <text class="hub-title" x="600" y="355">Muscat Trading LLC</text>
+    <text class="hub-sub"   x="600" y="377">Corporate customer</text>
+  </g>
+
+  <!-- ================= Left: people ================= -->
+  <g>
+    <rect class="card" x="60" y="90" width="280" height="84" rx="14"/>
+    <circle class="avatar" cx="100" cy="132" r="20"/>
+    <text class="initials" x="100" y="136">AB</text>
+    <text class="name" x="132" y="127">Ahmed Al Balushi</text>
+    <text class="role" x="132" y="147">Shareholder, 35%</text>
+  </g>
+
+  <g>
+    <rect class="card" x="60" y="298" width="280" height="84" rx="14"/>
+    <circle class="avatar" cx="100" cy="340" r="20"/>
+    <text class="initials" x="100" y="344">SH</text>
+    <text class="name" x="132" y="335">Sara Al Harthy</text>
+    <text class="role" x="132" y="355">Authorized signatory</text>
+  </g>
+
+  <g>
+    <rect class="card" x="60" y="488" width="280" height="84" rx="14"/>
+    <circle class="avatar" cx="100" cy="530" r="20"/>
+    <text class="initials" x="100" y="534">FB</text>
+    <text class="name" x="132" y="525">Fatma Al Balushi</text>
+    <text class="role" x="132" y="545">Signatory</text>
+  </g>
+
+  <!-- ================= Right: director & entities ================= -->
+  <g>
+    <rect class="card" x="860" y="58" width="280" height="84" rx="14"/>
+    <circle class="avatar" cx="900" cy="100" r="20"/>
+    <text class="initials" x="900" y="104">KB</text>
+    <text class="name" x="932" y="95">Khalid Al Balushi</text>
+    <text class="role" x="932" y="115">Director</text>
+  </g>
+
+  <g>
+    <rect class="card" x="860" y="218" width="280" height="84" rx="14"/>
+    <circle class="avatar" cx="900" cy="260" r="20"/>
+    <use href="#i-building" class="glyph" x="889" y="249" width="22" height="22"/>
+    <text class="name" x="932" y="255">Muscat Holdings LLC</text>
+    <text class="role" x="932" y="275">Related company</text>
+  </g>
+
+  <g>
+    <rect class="card" x="860" y="378" width="280" height="84" rx="14"/>
+    <circle class="avatar" cx="900" cy="420" r="20"/>
+    <use href="#i-building" class="glyph" x="889" y="409" width="22" height="22"/>
+    <text class="name" x="932" y="415">Oman Trading Services LLC</text>
+    <text class="role" x="932" y="435">Related company</text>
+  </g>
+
+  <g>
+    <rect class="card" x="860" y="538" width="280" height="84" rx="14"/>
+    <circle class="avatar" cx="900" cy="580" r="20"/>
+    <use href="#i-bank" class="glyph" x="889" y="569" width="22" height="22"/>
+    <text class="name" x="932" y="575">Ahli Bank Oman</text>
+    <text class="role" x="932" y="595">Banking relationship</text>
+  </g>
+</svg>
+</div>
+</body>
+</html>
