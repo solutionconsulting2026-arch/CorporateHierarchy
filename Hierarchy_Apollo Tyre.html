@@ -1,0 +1,301 @@
+<!doctype html>
+<html>
+<head>
+  <title>Apollo Tyres - Corporate Hierarchy (Interactive) - Blue Theme</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue-900: #6EAAD7;
+      --blue-700: #9FCBE7;
+      --blue-200: #CFECF7;
+      --bg: #F6FBFD;
+      --text: #000000;
+      --shadow: 0 8px 22px rgba(110, 170, 215, 0.18);
+      --radius: 12px;
+      --font-sans: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html, body { height:100%; margin:0; background:linear-gradient(180deg,#fbfdff 0%,#ffffff 100%); font-family:var(--font-sans); color:var(--text); }
+    .wrap { padding:18px; box-sizing:border-box; height:100vh; display:flex; flex-direction:column; gap:12px; }
+    #canvas { flex:1; border-radius:10px; background:linear-gradient(180deg,#fff 0%,#f7fbff 100%); position:relative; overflow:hidden; }
+    svg { width:100%; height:100%; display:block; }
+    .node-box { pointer-events:auto; }
+    .node-rect { fill:var(--blue-200); stroke:var(--blue-700); stroke-width:2; rx:12; ry:12; filter:drop-shadow(var(--shadow)); }
+    .node-title { font-weight:600; font-size:14px; text-anchor:start; fill:var(--text); }
+    .node-sub { font-size:12px; opacity:.85; text-anchor:start; fill:var(--text); }
+    .centered text { text-anchor:middle; }
+    .parent .node-rect { fill:var(--blue-900); stroke:var(--blue-900); }
+    .parent .node-title,.parent .node-sub { fill:#fff; }
+    .parent .node-title { font-size:20px; }
+    .parent .node-sub { font-size:14px; opacity:.95; }
+    .subsidiary .node-rect { fill:var(--blue-700); stroke:var(--blue-700); }
+    .subsidiary .node-title { fill:#000; font-size:16px; }
+    .subsidiary .node-sub { font-size:13px; opacity:.9; }
+    .child .node-rect { fill:var(--bg); stroke:var(--blue-900); }
+    .child .node-title { fill:var(--blue-900); text-anchor:start; font-size:13px; }
+    .child .node-sub { text-anchor:start; font-size:12px; opacity:.85; }
+    .connector { fill:none; stroke:#6EAAD7; stroke-width:2; }
+    .connector.trunk { stroke:#A9D2EA; }
+    .tooltip { position:absolute; display:none; background:#fff; border-radius:8px; padding:10px; box-shadow:var(--shadow); max-width:360px; border:1px solid rgba(110,170,215,.10); font-size:14px; pointer-events:none; z-index:5; }
+    .tooltip h4 { margin:0 0 6px; font-size:15px; }
+    .tooltip p { margin:0; font-size:13px; line-height:1.3; }
+    .sidepanel { position:absolute; right:12px; top:12px; width:420px; max-width:44%; height:86%; background:#fff; border-radius:10px; box-shadow:var(--shadow); padding:16px; display:none; overflow:auto; border:1px solid rgba(110,170,215,.10); z-index:10; }
+    .sidepanel h3 { margin:0 0 8px; font-size:18px; }
+    .sidepanel .close { position:absolute; right:8px; top:6px; cursor:pointer; }
+    .link-btn { display:inline-block; padding:6px 10px; border-radius:6px; border:1px solid rgba(110,170,215,.25); background:#fff; font-size:13px; margin-left:8px; cursor:pointer; }
+    .stakeholders a { text-decoration:none; }
+    .stakeholders a:hover { text-decoration:underline; }
+    @media (max-width:700px) { .sidepanel { display:none !important; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="canvas" role="application" aria-label="Corporate hierarchy diagram">
+      <div id="tooltip" class="tooltip" role="dialog" aria-hidden="true"></div>
+      <div id="sidepanel" class="sidepanel" aria-hidden="true">
+        <button class="close" aria-label="Close panel" onclick="closePanel()">✕</button>
+        <div id="panel-content"></div>
+      </div>
+      <svg id="svgRoot" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet" tabindex="0">
+        <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6EAAD7" /></marker></defs>
+        <g id="connectors"></g><g id="nodes"></g>
+      </svg>
+    </div>
+  </div>
+<script>
+/************************
+ * DATA — Apollo Tyres
+ * Linked entities and operational details are illustrative demo data.
+ ************************/
+const DATA = {
+  parent: {
+    id: "apollo-tyre-global",
+    name: "Apollo Tyre Global",
+    type: "Parent",
+    link: "https://www.apollotyres.com/",
+    shareholders: "Illustrative demo data — confirm group ownership details before external use",
+    financials: "Global tyre manufacturing and mobility solutions • Passenger vehicle, commercial vehicle, bus and two-wheeler tyres"
+  },
+  subsidiaries: [
+    {
+      id: "apollo-tyre-amaan",
+      name: "Apollo Tyre Amaan",
+      type: "Subsidiary",
+      link: "https://presales.businessbywire.com/appmeadg/businessnext/detail/Account?x=tzgrv8ubxj64b4kajaukxzjsxwqk23yejarrzjwuwsbfgul2lnatjwal4lpl5zg4pf3qvy4b6enez7eunrz2btzxs674864nm4m4er5kw7t86jzs744frwr6lyygv6dr4fxe53585xem83xmhuty8maxgwvlb2h8nb9kk6npsfbhwyqmjge72r2btdenrv5jcdtfwkpm7qrvpfanml6bcxl7bssspr9zqgf2rs7qxs6unjj4q8uw3swx2k4w8gdtaghev9f9gb8e8cxzpwujdsmfmv97fnbx55jyylfn67y4lpyderpa&mdi=-1",
+      Shareholders: "Apollo Tyre Global (100% — illustrative demo data)",
+      Financials: "Regional sales and distribution • Fleet customer management • Tyre dealer network",
+      KeyStakeholders: [
+        { name: "Satish Sharma", role: "President, Asia Pacific, Middle East & Africa (APMEA) — Apollo Tyres", link: "https://corporate.apollotyres.com/press-and-media/news/corporate/dipankar-ghosh-joins-apollo-tyres/" },
+        { name: "Dipankar Ghosh", role: "Group Head, Human Resources — APMEA", link: "https://corporate.apollotyres.com/press-and-media/news/corporate/dipankar-ghosh-joins-apollo-tyres/" },
+        { name: "Benoit Rivallant", role: "Chief Commercial Officer — Apollo Tyres", link: "https://corporate.apollotyres.com/who-we-are/leadership/" }
+      ],
+      suppliers: [
+        { id: "s1", name: "Gulf Rubber & Materials Trading", region: "Middle East", desc: "Illustrative supplier of rubber compounds and tyre production materials", link: "#" },
+        { id: "s2", name: "Amaan Logistics Services", region: "Amaan Region", desc: "Illustrative warehousing, freight and distribution partner", link: "#" }
+      ],
+      accounts: [
+        { id: "a1", name: "Amaan Mobility Group", region: "Amaan Region", desc: "Illustrative fleet customer for commercial tyre supply and replacement", link: "#" },
+        { id: "a2", name: "Desert Road Transport LLC", region: "Amaan Region", desc: "Illustrative transport account with recurring fleet tyre requirements", link: "#" }
+      ],
+      holdings: [
+        { id: "h1", name: "Amaan Distribution Network", region: "Amaan Region", desc: "Illustrative regional dealer coverage, service partners and distribution points", link: "#" }
+      ]
+    },
+    {
+      id: "apollo-tyre-riyadh",
+      name: "Apollo Tyre Riyadh",
+      type: "Subsidiary",
+      link: "https://presales.businessbywire.com/appmeadg/businessnext/detail/Account?x=tzgrv8ubxj64b4kajaukxzjsxwqk23yejarrzjwuwsbfgul2lnatjwal4lpl5zg4pf3qvy4b6enez7eunrz2btzxs674864nm4m4er5kw7t86jzs744frwr6lyygv6dr4fxe53585xem83xmhuty8maxgwvlb2h8nb9kk6npsfbhwyqmjge72r2btdenrv5jcdtfwkpm7qrvpfanml6bcxl7bssspr9zqgf2rs7qxs6unjj4q8uw3swx2k4w8gdtaghev9f9gb8e8cxzpwujdsmfmv97fnbx55jyylfn67y4lpyderpa&mdi=-1",
+	  
+	  
+      Shareholders: "Apollo Tyre Global (100% — illustrative demo data)",
+      Financials: "Saudi Arabia market operations • Dealer network • Commercial fleet and enterprise tyre sales",
+      KeyStakeholders: [
+        { name: "Country General Manager", role: "Country Leadership", link: "#" },
+        { name: "National Sales Manager", role: "Sales", link: "#" },
+        { name: "Key Accounts Director", role: "Fleet & Enterprise Accounts", link: "#" }
+      ],
+      suppliers: [
+        { id: "s3", name: "Riyadh Warehousing Services", region: "Riyadh, Saudi Arabia", desc: "Illustrative inventory storage and regional fulfilment partner", link: "#" },
+        { id: "s4", name: "Tyre Service Equipment Co.", region: "Saudi Arabia", desc: "Illustrative supplier of tyre servicing equipment and workshop consumables", link: "#" }
+      ],
+      accounts: [
+        { id: "a3", name: "Najd Fleet Services", region: "Riyadh, Saudi Arabia", desc: "Illustrative fleet operator with scheduled tyre replacement needs", link: "#" },
+        { id: "a4", name: "Riyadh Commercial Transport", region: "Riyadh, Saudi Arabia", desc: "Illustrative truck and bus tyre customer", link: "#" }
+      ],
+      holdings: [
+        { id: "h2", name: "Riyadh Dealer & Service Network", region: "Central Saudi Arabia", desc: "Illustrative dealer outlets, service centres and fleet coverage", link: "#" }
+      ]
+    },
+    {
+      id: "apollo-tyre-dubai",
+      name: "Apollo Tyre Dubai",
+      type: "Subsidiary",
+      link: "https://www.apollotyres.com/",
+      Shareholders: "Apollo Tyre Global (100% — illustrative demo data)",
+      Financials: "UAE market operations • Retail distribution • Fleet partnerships • Regional trade",
+      KeyStakeholders: [
+        { name: "UAE Country Manager", role: "Country Leadership", link: "#" },
+        { name: "Head of Distribution", role: "Channel Management", link: "#" },
+        { name: "Fleet Business Lead", role: "Enterprise Sales", link: "#" }
+      ],
+      suppliers: [
+        { id: "s5", name: "UAE Tyre Import & Logistics Partner", region: "United Arab Emirates", desc: "Illustrative import handling, customs coordination and distribution partner", link: "#" },
+        { id: "s6", name: "Automotive Service Network", region: "Dubai, UAE", desc: "Illustrative workshop and tyre-fitment partner", link: "#" }
+      ],
+      accounts: [
+        { id: "a5", name: "Emirates Fleet Solutions", region: "Dubai, UAE", desc: "Illustrative passenger and light-commercial fleet account", link: "#" },
+        { id: "a6", name: "Gulf Mobility Rentals", region: "United Arab Emirates", desc: "Illustrative mobility and rental customer with multi-site tyre needs", link: "#" }
+      ],
+      holdings: [
+        { id: "h3", name: "Dubai Regional Distribution Hub", region: "Dubai, UAE", desc: "Illustrative inventory hub supporting UAE dealers and nearby export markets", link: "#" }
+      ]
+    }
+  ]
+};
+
+/***********************
+ * Layout configuration
+ ***********************/
+const cfg = {
+  svgW: 1200, parentY: 50, subsidiaryY: 210,
+  parentBox: { w: 340, h: 96 },
+  subsidiaryBox: { w: 280, h: 84 },
+  childBox: { w: 240, h: 62 },
+  childGapY: 26, columnGutter: 60, trunkOffset: 34,
+  subToChildGap: 70, bottomPadding: 50
+};
+cfg.subsidiarySpacing = Math.max(cfg.subsidiaryBox.w + cfg.columnGutter, cfg.childBox.w + cfg.trunkOffset + cfg.columnGutter);
+const svg = document.getElementById("svgRoot");
+const nodesGroup = document.getElementById("nodes");
+const connGroup = document.getElementById("connectors");
+const tooltip = document.getElementById("tooltip");
+const sidepanel = document.getElementById("sidepanel");
+const panelContent = document.getElementById("panel-content");
+
+function collectChildren(sdata) {
+  const out = [];
+  (sdata.dealers || []).forEach(d => out.push({ data: d, kind: "Dealer" }));
+  (sdata.suppliers || []).forEach(d => out.push({ data: d, kind: "Supplier" }));
+  (sdata.accounts || []).forEach(d => out.push({ data: d, kind: "Account" }));
+  (sdata.holdings || []).forEach(d => out.push({ data: d, kind: "Holding" }));
+  return out;
+}
+function render() {
+  nodesGroup.innerHTML = ""; connGroup.innerHTML = "";
+  const nSubs = DATA.subsidiaries.length;
+  const requiredW = nSubs * cfg.subsidiarySpacing + cfg.columnGutter;
+  const svgW = Math.max(cfg.svgW, requiredW), centerX = svgW / 2;
+  const parentNode = { x:centerX-cfg.parentBox.w/2, y:cfg.parentY, w:cfg.parentBox.w, h:cfg.parentBox.h, data:DATA.parent };
+  const totalSpan = (nSubs-1)*cfg.subsidiarySpacing, firstCenter = centerX-totalSpan/2;
+  const subsNodes = DATA.subsidiaries.map((s,i) => {
+    const cx = firstCenter+i*cfg.subsidiarySpacing;
+    return { x:cx-cfg.subsidiaryBox.w/2, y:cfg.subsidiaryY, w:cfg.subsidiaryBox.w, h:cfg.subsidiaryBox.h, cx, data:s };
+  });
+  subsNodes.forEach(sub => drawOrthogonalConnector({x:parentNode.x+parentNode.w/2,y:parentNode.y+parentNode.h},{x:sub.cx,y:sub.y},"connector"));
+  drawNode(parentNode,"parent");
+  const childStartY = cfg.subsidiaryY+cfg.subsidiaryBox.h+cfg.subToChildGap;
+  let lowestY = childStartY;
+  subsNodes.forEach(sub => {
+    drawNode(sub,"subsidiary");
+    const children = collectChildren(sub.data); if (!children.length) return;
+    const colX = sub.cx-cfg.childBox.w/2+cfg.trunkOffset/2, trunkX = colX-cfg.trunkOffset;
+    const placed = children.map((c,idx) => ({x:colX,y:childStartY+idx*(cfg.childBox.h+cfg.childGapY),w:cfg.childBox.w,h:cfg.childBox.h,data:c.data,kind:c.kind}));
+    const lastMidY = placed[placed.length-1].y+cfg.childBox.h/2;
+    lowestY = Math.max(lowestY,placed[placed.length-1].y+cfg.childBox.h);
+    drawPolyline([[sub.cx,sub.y+sub.h],[sub.cx,sub.y+sub.h+cfg.subToChildGap/2],[trunkX,sub.y+sub.h+cfg.subToChildGap/2],[trunkX,lastMidY]],"connector trunk",false);
+    placed.forEach(c => { drawPolyline([[trunkX,c.y+c.h/2],[c.x,c.y+c.h/2]],"connector",true); drawNode(c,"child",c.kind); });
+  });
+  const svgH = lowestY+cfg.bottomPadding;
+  svg.setAttribute("viewBox",`0 0 ${svgW} ${svgH}`);
+}
+function drawNode(nodeObj,variant,kind) {
+  const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+  g.classList.add("node-box"); if (variant) g.classList.add(variant);
+  if (variant==="parent"||variant==="subsidiary") g.classList.add("centered");
+  const {x,y,w,h}=nodeObj, rect=document.createElementNS("http://www.w3.org/2000/svg","rect");
+  rect.setAttribute("x",x); rect.setAttribute("y",y); rect.setAttribute("width",w); rect.setAttribute("height",h); rect.setAttribute("rx",12); rect.setAttribute("ry",12); rect.classList.add("node-rect"); g.appendChild(rect);
+  const centered=g.classList.contains("centered"), titleY=centered?y+h/2-4:y+26, subY=centered?y+h/2+20:y+46;
+  const title=document.createElementNS("http://www.w3.org/2000/svg","text");
+  title.setAttribute("x",centered?x+w/2:x+14); title.setAttribute("y",titleY); title.setAttribute("class","node-title"); title.textContent=nodeObj.data.name; g.appendChild(title);
+  const subtitle=document.createElementNS("http://www.w3.org/2000/svg","text");
+  subtitle.setAttribute("x",centered?x+w/2:x+14); subtitle.setAttribute("y",subY); subtitle.setAttribute("class","node-sub");
+  subtitle.textContent=variant==="parent"?(nodeObj.data.type||"Parent"):variant==="subsidiary"?(nodeObj.data.type||"Subsidiary"):(kind||""); g.appendChild(subtitle);
+  fitText(title,w-(centered?24:28));
+  const overlay=document.createElementNS("http://www.w3.org/2000/svg","rect");
+  overlay.setAttribute("x",x); overlay.setAttribute("y",y); overlay.setAttribute("width",w); overlay.setAttribute("height",h); overlay.setAttribute("fill","transparent"); overlay.setAttribute("tabindex","0");
+  overlay.setAttribute("aria-label",[nodeObj.data.name,variant,kind||""].join(" ")); overlay.style.cursor="pointer";
+  overlay.addEventListener("mouseenter",ev=>showTooltip(nodeObj,ev)); overlay.addEventListener("mouseleave",hideTooltip);
+  overlay.addEventListener("focus",ev=>showTooltip(nodeObj,ev)); overlay.addEventListener("blur",hideTooltip);
+  overlay.addEventListener("click",()=>openPanel(nodeObj,variant,kind));
+  overlay.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){openPanel(nodeObj,variant,kind);e.preventDefault();}});
+  g.appendChild(overlay); nodesGroup.appendChild(g);
+}
+function fitText(textEl,maxWidth) {
+  try { const base=parseFloat(window.getComputedStyle(textEl).fontSize)||14; let size=base; while(textEl.getComputedTextLength()>maxWidth&&size>9){size-=.5;textEl.setAttribute("font-size",size+"px");} } catch(e) {}
+}
+function drawPolyline(points,cls,withArrow) {
+  const poly=document.createElementNS("http://www.w3.org/2000/svg","polyline");
+  poly.setAttribute("points",points.map(p=>p.join(",")).join(" ")); poly.setAttribute("class",cls); poly.setAttribute("fill","none");
+  poly.setAttribute("stroke-linecap","round"); poly.setAttribute("stroke-linejoin","round"); if(withArrow)poly.setAttribute("marker-end","url(#arrow)"); connGroup.appendChild(poly);
+}
+function drawOrthogonalConnector(from,to,cls) { const midY=(from.y+to.y)/2; drawPolyline([[from.x,from.y],[from.x,midY],[to.x,midY],[to.x,to.y]],cls,true); }
+function showTooltip(nodeObj,ev) {
+  const d=nodeObj.data, type=(d.type||"").toLowerCase(), isParent=type.includes("parent"), isSubs=type.includes("subsidiary");
+  let html="";
+  if(isParent||isSubs) {
+    html+=`<h4>${escapeHtml(d.name)}</h4>`;
+    html+=`<p><strong>Shareholders:</strong> ${escapeHtml(d.shareholders||d.Shareholders||"—")}</p>`;
+    html+=`<p><strong>Financials:</strong> ${escapeHtml(d.financials||d.Financials||"—")}</p>`;
+  } else {
+    html+=`<h4>${escapeHtml(d.name)}</h4><p><strong>Type:</strong> ${escapeHtml(ev.target.getAttribute("aria-label")||"")}</p>`;
+    html+=`<p><strong>Region:</strong> ${escapeHtml(d.region||"—")}</p><p>${escapeHtml(d.desc||"")}</p>`;
+  }
+  tooltip.innerHTML=html; tooltip.style.display="block"; tooltip.setAttribute("aria-hidden","false");
+  const rect=document.getElementById("canvas").getBoundingClientRect(), box=ev.target.getBoundingClientRect();
+  const pageX=ev.clientX||(box.left+box.width/2), pageY=ev.clientY||(box.top+box.height/2);
+  tooltip.style.left=Math.max(8,Math.min(pageX-rect.left+14,rect.width-360))+"px";
+  tooltip.style.top=Math.max(8,Math.min(pageY-rect.top+10,rect.height-120))+"px";
+}
+function hideTooltip(){tooltip.style.display="none";tooltip.setAttribute("aria-hidden","true");}
+function openPanel(nodeObj,variant,kind){sidepanel.style.display="block";sidepanel.setAttribute("aria-hidden","false");panelContent.innerHTML=buildPanelHtml(nodeObj.data,variant,kind);}
+function closePanel(){sidepanel.style.display="none";sidepanel.setAttribute("aria-hidden","true");}
+function buildPanelHtml(data,variant,kind) {
+  if(variant==="parent"||(data.type&&data.type.toLowerCase().includes("parent"))) {
+    let html=`<h3 style="margin-bottom:14px">${escapeHtml(data.name)}</h3><p><strong>Type:</strong> Parent</p>`;
+    html+=`<p><strong>Shareholders:</strong> ${escapeHtml(data.shareholders||data.Shareholders||"—")}</p><p><strong>Financials:</strong> ${escapeHtml(data.financials||data.Financials||"—")}</p>`;
+    if(data.link) html+=`<hr style="border:none;border-top:1px solid rgba(0,0,0,.15);margin:14px 0"><p style="opacity:.85;font-size:13px;margin:0">Actions: <button class="link-btn" onclick="window.open('${escapeJs(data.link)}','_blank')">View profile</button></p>`;
+    return html;
+  }
+  if(variant==="subsidiary"||(data.type&&data.type.toLowerCase().includes("subsidiary"))) {
+    let html=`<h3 style="margin-bottom:14px">${escapeHtml(data.name)}</h3><p><strong>Type:</strong> Subsidiary</p>`;
+    html+=`<p><strong>Shareholders:</strong> ${escapeHtml(data.Shareholders||data.shareholders||"—")}</p><p><strong>Financials:</strong> ${escapeHtml(data.Financials||data.financials||"—")}</p><hr style="border:none;border-top:1px solid rgba(0,0,0,.15);margin:14px 0">`;
+    const stakeholders=data.KeyStakeholders||data.keyStakeholders||[];
+    html+=`<div style="margin-bottom:14px"><strong>Key Stakeholders:</strong></div>`;
+    if(stakeholders.length) {
+      html+=`<ul class="stakeholders" style="margin:6px 0 0 18px;padding:0">`;
+      stakeholders.forEach(sh=>{const nm=escapeHtml(sh.name||"—"),role=sh.role?` - <span style="opacity:.85">${escapeHtml(sh.role)}</span>`:"";
+        if(sh.link&&sh.link!=="#")html+=`<li style="margin:6px 0"><a href="${escapeJs(sh.link)}" target="_blank" rel="noopener noreferrer" style="color:#1a73e8">${nm}</a>${role}</li>`;
+        else html+=`<li style="margin:6px 0">${nm}${role}</li>`;
+      }); html+=`</ul>`;
+    } else html+=`<div style="opacity:.7;font-size:13px">—</div>`;
+    html+=`<hr style="border:none;border-top:1px solid rgba(0,0,0,.15);margin:14px 0"><div style="margin-bottom:10px"><strong>Linked entities</strong></div>`;
+    const groups=[{title:"Suppliers",items:data.suppliers},{title:"Accounts",items:data.accounts},{title:"Holdings",items:data.holdings},{title:"Dealers",items:data.dealers}];
+    groups.forEach(group=>{const items=group.items||[];if(!items.length)return;html+=`<div style="margin-top:14px"><div style="font-weight:700;margin-bottom:8px">${group.title}</div>`;
+      items.forEach(item=>{html+=`<div style="margin-bottom:12px"><div style="font-weight:700">${escapeHtml(item.name||"—")}</div>${item.region?`<div style="opacity:.85;font-size:13px">${escapeHtml(item.region)}</div>`:""}${item.desc?`<div style="opacity:.75;font-size:13px">${escapeHtml(item.desc)}</div>`:""}</div>`;});html+=`</div>`;});
+    if(data.link)html+=`<hr style="border:none;border-top:1px solid rgba(0,0,0,.15);margin:14px 0"><p style="opacity:.85;font-size:13px;margin:0">Actions: <button class="link-btn" onclick="window.open('${escapeJs(data.link)}','_blank')">View profile</button></p>`;
+    return html;
+  }
+  const childKind=kind||(data.kind?data.kind:"Entity");let html=`<h3 style="margin-bottom:14px">${escapeHtml(data.name)}</h3><p><strong>Type:</strong> ${escapeHtml(childKind)}</p>`;
+  if(data.region)html+=`<p><strong>Region:</strong> ${escapeHtml(data.region)}</p>`;if(data.desc)html+=`<p><strong>Description:</strong> ${escapeHtml(data.desc)}</p>`;
+  if(data.link&&data.link!=="#")html+=`<hr style="border:none;border-top:1px solid rgba(0,0,0,.15);margin:14px 0"><p style="opacity:.85;font-size:13px;margin:0">Actions: <button class="link-btn" onclick="window.open('${escapeJs(data.link)}','_blank')">Open link</button></p>`;
+  return html;
+}
+function escapeHtml(s){if(s===undefined||s===null)return"";return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");}
+function escapeJs(s){if(!s)return"";return String(s).replaceAll('"',"&quot;").replaceAll("'","\\'");}
+render();
+window.refreshHierarchy=function(newData){if(newData)Object.assign(DATA,newData);render();};
+window.addEventListener("resize",()=>hideTooltip());
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){hideTooltip();closePanel();}});
+</script>
+</body>
+</html>
