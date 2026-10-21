@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Apollo Tyres Amman | Director Hierarchy</title>
+<style>
+  :root {
+    --ink: #163b63;
+    --muted: #6480a0;
+    --line: #c7d8eb;
+    --border: #d3e1f0;
+    --teal: #00a99d;
+    --blue: #4d9dd2;
+    --bg: #f6f9fd;
+    --promoter: #009b88;
+    --neutral: #65758b;
+    --risk: #e84b61;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px 12px;
+    background: #f1f5fa;
+    color: var(--ink);
+    font-family: "Segoe UI", Arial, sans-serif;
+  }
+  .panel {
+    max-width: 1600px;
+    min-height: 700px;
+    margin: 0 auto;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #dbe5f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(24, 57, 91, .04);
+  }
+  .topbar {
+    height: 74px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid #e3ebf4;
+  }
+  .topbar h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .1px; }
+  .legendbar {
+    min-height: 40px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    border-bottom: 1px solid #e3ebf4;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.promoter { background: var(--promoter); }
+  .dot.neutral { background: var(--neutral); }
+  .dot.risk { background: var(--risk); }
+  .canvas {
+    position: relative;
+    min-height: 590px;
+    padding: 28px 24px 44px;
+    background-color: #fff;
+    background-image: radial-gradient(#d3e4f7 .9px, transparent .9px);
+    background-size: 17px 17px;
+  }
+  .tree { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .level { position: relative; width: 100%; display: grid; justify-content: center; align-items: stretch; gap: 24px; }
+  .level-one { grid-template-columns: minmax(280px, 340px); margin-bottom: 52px; }
+  .level-two { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 40px; }
+  .level-three { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+  .level-one::after {
+    content: ""; position: absolute; left: 50%; bottom: -27px; width: 1px; height: 27px;
+    background: var(--line); transform: translateX(-50%);
+  }
+  .level-two::before {
+    content: ""; position: absolute; top: -27px; left: 16%; right: 16%; height: 1px; background: var(--line);
+  }
+  .level-two .card::before {
+    content: ""; position: absolute; left: 50%; top: -27px; height: 27px; width: 1px;
+    background: var(--line); transform: translateX(-50%);
+  }
+  .level-two::after {
+    content: ""; position: absolute; left: 50%; bottom: -20px; height: 20px; width: 1px;
+    background: var(--line); transform: translateX(-50%);
+  }
+  .level-three .card::before {
+    content: ""; position: absolute; left: 50%; top: -20px; height: 20px; width: 1px;
+    background: var(--line); transform: translateX(-50%);
+  }
+  .level-three::before {
+    content: ""; position: absolute; top: -20px; left: 8.5%; right: 8.5%; height: 1px; background: var(--line);
+  }
+  .card {
+    min-width: 0;
+    min-height: 112px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 15px;
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--blue);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 3px 8px rgba(28, 66, 106, .035);
+  }
+  .level-one .card { border-top-color: var(--teal); min-height: 112px; }
+  .avatar {
+    flex: 0 0 43px;
+    width: 43px; height: 43px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    color: #00699b;
+    font-size: 14px; font-weight: 750;
+    background: #e6f5fb;
+    border: 1px solid #d0eaf5;
+  }
+  .details { min-width: 0; }
+  .name { margin: 0 0 5px; color: #153d66; font-size: 12px; line-height: 1.25; font-weight: 700; }
+  .role { margin: 0 0 7px; color: #45688e; font-size: 11px; line-height: 1.35; }
+  .department { margin: 0 0 7px; color: #7790ac; font-size: 10px; line-height: 1.3; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 20px; font-size: 9px; font-weight: 800; letter-spacing: .15px; line-height: 1.1; white-space: nowrap; }
+  .badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .badge.promoter { color: #008f7d; background: #e5f7f3; }
+  .badge.neutral { color: #596b82; background: #edf1f6; }
+  .badge.risk { color: #d63e55; background: #fff0f2; }
+  .domain { font-size: 9px; color: #526f90; white-space: nowrap; }
+  @media (max-width: 1100px) {
+    .level-three { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 32px; }
+    .level-three::before { display: none; }
+    .level-two { gap: 14px; }
+    .card { padding: 13px 11px; }
+  }
+  @media (max-width: 720px) {
+    body { padding: 8px; }
+    .topbar { height: 62px; padding: 0 14px; }
+    .legendbar { padding: 10px 14px; flex-wrap: wrap; gap: 9px 14px; }
+    .canvas { padding: 24px 12px 35px; }
+    .level-one { margin-bottom: 36px; }
+    .level-two { grid-template-columns: 1fr; gap: 30px; margin-bottom: 30px; }
+    .level-two::before, .level-two::after, .level-two .card::before { display: none; }
+    .level-three { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 10px; }
+    .level-three .card::before { display: none; }
+    .card { min-height: 108px; }
+  }
+  @media print {
+    body { padding: 0; background: white; }
+    .panel { max-width: none; border: 0; box-shadow: none; }
+    .canvas { background-image: none; }
+  }
+</style>
+</head>
+<body>
+  <main class="panel">
+    <header class="topbar"><h1>Director Hierarchy</h1></header>
+    <div class="legendbar" aria-label="Relationship legend">
+      <span class="legend-item"><span class="dot promoter"></span>Promoter · Highly engaged</span>
+      <span class="legend-item"><span class="dot neutral"></span>Neutral · Monitor</span>
+      <span class="legend-item"><span class="dot risk"></span>At risk · Follow up</span>
+    </div>
+    <section class="canvas" aria-label="Director hierarchy chart">
+      <div class="tree">
+        <div class="level level-one">
+          <article class="card">
+            <div class="avatar">OA</div>
+            <div class="details">
+              <p class="name">Omar Al-Khatib</p>
+              <p class="role">Regional Managing Director</p>
+              <p class="department">Middle East Leadership</p>
+              <div class="meta"><span class="badge promoter">PROMOTER</span><span class="domain">Regional leadership</span></div>
+            </div>
+          </article>
+        </div>
+        <div class="level level-two">
+          <article class="card">
+            <div class="avatar">LM</div>
+            <div class="details">
+              <p class="name">Lina Al-Masri</p>
+              <p class="role">Country General Manager</p>
+              <p class="department">Jordan Business Leadership</p>
+              <div class="meta"><span class="badge neutral">NEUTRAL</span><span class="domain">Country leadership</span></div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="avatar">AH</div>
+            <div class="details">
+              <p class="name">Ahmad Al-Haddad</p>
+              <p class="role">Finance Director</p>
+              <p class="department">Finance &amp; Administration</p>
+              <div class="meta"><span class="badge promoter">PROMOTER</span><span class="domain">Finance</span></div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="avatar">YN</div>
+            <div class="details">
+              <p class="name">Yazan Al-Najjar</p>
+              <p class="role">Supply Chain &amp; Operations Director</p>
+              <p class="department">Operations</p>
+              <div class="meta"><span class="badge neutral">NEUTRAL</span><span class="domain">Operations</span></div>
+            </div>
+          </article>
+        </div>
+        <div class="level level-three">
+          <article class="card">
+            <div class="avatar">SK</div>
+            <div class="details">
+              <p class="name">Sami Al-Khalidi</p>
+              <p class="role">Sales &amp; Dealer Network Manager</p>
+              <p class="department">Commercial</p>
+              <div class="meta"><span class="badge promoter">PROMOTER</span></div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="avatar">KT</div>
+            <div class="details">
+              <p class="name">Kareem Al-Tamimi</p>
+              <p class="role">Key Accounts Manager</p>
+              <p class="department">Dealer Relationships</p>
+              <div class="meta"><span class="badge neutral">NEUTRAL</span></div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="avatar">DR</div>
+            <div class="details">
+              <p class="name">Dana Abu-Rumman</p>
+              <p class="role">Treasury &amp; Banking Manager</p>
+              <p class="department">Treasury</p>
+              <div class="meta"><span class="badge promoter">PROMOTER</span></div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="avatar">NH</div>
+            <div class="details">
+              <p class="name">Nour Al-Husseini</p>
+              <p class="role">Compliance &amp; Risk Manager</p>
+              <p class="department">Risk &amp; Compliance</p>
+              <div class="meta"><span class="badge risk">AT RISK</span></div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="avatar">HA</div>
+            <div class="details">
+              <p class="name">Hala Al-Ajlouni</p>
+              <p class="role">Procurement Manager</p>
+              <p class="department">Procurement</p>
+              <div class="meta"><span class="badge neutral">NEUTRAL</span></div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="avatar">FM</div>
+            <div class="details">
+              <p class="name">Fadi Mansour</p>
+              <p class="role">Logistics &amp; Distribution Manager</p>
+              <p class="department">Supply Chain</p>
+              <div class="meta"><span class="badge promoter">PROMOTER</span></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
